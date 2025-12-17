@@ -211,15 +211,20 @@
     - **Property 14: Ensemble improvement over individual models**
     - **Validates: Requirements 8.2**
 
-  - [ ] 7.6 Write property test for processing time performance
+  - [-] 7.6 Write property test for processing time performance
+
+
+
     - **Property 1: Processing time performance**
     - **Validates: Requirements 1.2**
 
   - [ ] 7.7 Write property test for confidence score provision
+
     - **Property 4: Confidence score provision**
     - **Validates: Requirements 2.3**
 
   - [ ] 7.8 Write property test for low confidence warnings
+
     - **Property 5: Low confidence warning**
     - **Validates: Requirements 2.4**
 
