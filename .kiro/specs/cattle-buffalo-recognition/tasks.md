@@ -285,7 +285,8 @@
     - **Property 8: Result caching in offline mode**
     - **Validates: Requirements 4.3**
 
-- [x] 9. Develop results display and annotation system
+- [ ] 9. Develop results display and annotation system
+
 
 
 
@@ -319,7 +320,8 @@
     - Test breed information loading and display
     - _Requirements: 2.5, 3.3, 7.3_
 
-- [ ] 10. Implement report generation and sharing system
+- [-] 10. Implement report generation and sharing system
+
 
   - [x] 7.1 Create PDF report generation service
 
@@ -377,7 +379,8 @@
     - **Property 11: Performance metrics logging**
     - **Validates: Requirements 6.2**
 
-- [ ] 13. Create advanced model integration and validation system
+- [-] 13. Create advanced model integration and validation system
+
   - [ ] 10.1 Implement model conversion and optimization pipeline
     - Create scripts for TensorFlow Lite model conversion
     - Add model accuracy preservation validation
