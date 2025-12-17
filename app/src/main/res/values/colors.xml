@@ -32,4 +32,9 @@
     <color name="livestock_brown">#8D6E63</color>
     <color name="warning_orange">#FF9800</color>
     <color name="error_red">#F44336</color>
+    
+    <!-- Results Activity Colors -->
+    <color name="primary_color">@color/md_theme_light_primary</color>
+    <color name="warning_background">#FFF3E0</color>
+    <color name="warning_text">#E65100</color>
 </resources>

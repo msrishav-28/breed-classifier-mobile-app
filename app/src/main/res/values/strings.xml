@@ -26,4 +26,21 @@
     <string name="camera_ready">Camera Ready</string>
     <string name="camera_initializing">Initializing Camera...</string>
     <string name="camera_capturing">Capturing...</string>
+    
+    <!-- Results Activity Strings -->
+    <string name="results_title">Recognition Results</string>
+    <string name="share_button">Share</string>
+    <string name="retake_photo">Retake Photo</string>
+    <string name="breed_identification">Breed Identification</string>
+    <string name="breed_information">Breed Information</string>
+    <string name="scientific_name">Scientific Name:</string>
+    <string name="origin">Origin:</string>
+    <string name="processing_info">Processing Information</string>
+    <string name="captured_image">Captured Image</string>
+    <string name="error_loading_results">Error loading results</string>
+    <string name="confidence_format">Confidence: %d%%</string>
+    <string name="type_confidence_format">Type Confidence: %d%%</string>
+    <string name="milk_yield_format">Average Milk Yield: %d-%d liters/year</string>
+    <string name="processing_time_format">Processing Time: %d ms</string>
+    <string name="image_info_format">Image: %dx%d, Quality: %.2f</string>
 </resources>
