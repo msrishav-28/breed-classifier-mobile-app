@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Cattle Buffalo Recognition</string>
+    <string name="camera_permission_required">Camera permission is required to capture images</string>
+    <string name="storage_permission_required">Storage permission is required to save reports</string>
+    <string name="capture_image">Capture Image</string>
+    <string name="processing">Processing...</string>
+    <string name="retry">Retry</string>
+    <string name="share_report">Share Report</string>
+    <string name="export_pdf">Export PDF</string>
+    <string name="breed_name">Breed Name</string>
+    <string name="animal_type">Animal Type</string>
+    <string name="confidence">Confidence</string>
+    <string name="characteristics">Characteristics</string>
+    <string name="low_confidence_warning">Low confidence prediction. Consider retaking the photo.</string>
+    <string name="image_quality_poor">Image quality is poor. Please improve lighting or reduce blur.</string>
+    <string name="multiple_animals_detected">Multiple animals detected. Please frame a single animal.</string>
+    <string name="processing_error">Error processing image. Please try again.</string>
+    <string name="model_loading_error">Unable to load recognition model. Please restart the app.</string>
+    <string name="offline_mode">Offline Mode</string>
+    <string name="results_cached">Results cached for later synchronization</string>
+</resources>
