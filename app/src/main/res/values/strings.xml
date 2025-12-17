@@ -19,4 +19,11 @@
     <string name="model_loading_error">Unable to load recognition model. Please restart the app.</string>
     <string name="offline_mode">Offline Mode</string>
     <string name="results_cached">Results cached for later synchronization</string>
+    
+    <!-- Camera Activity Strings -->
+    <string name="back_button">Back</string>
+    <string name="capture_button">Capture Photo</string>
+    <string name="camera_ready">Camera Ready</string>
+    <string name="camera_initializing">Initializing Camera...</string>
+    <string name="camera_capturing">Capturing...</string>
 </resources>

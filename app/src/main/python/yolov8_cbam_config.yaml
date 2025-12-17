@@ -1,0 +1,154 @@
+# YOLOv8 with CBAM Attention Configuration
+# Custom architecture for livestock recognition
+
+# Model architecture
+nc: 23  # number of classes (15 cattle + 8 buffalo breeds)
+depth_multiple: 0.67  # model depth multiple (medium size)
+width_multiple: 0.75  # layer channel multiple (medium size)
+
+# Anchors (not used in YOLOv8 but kept for compatibility)
+anchors:
+  - [10,13, 16,30, 33,23]  # P3/8
+  - [30,61, 62,45, 59,119]  # P4/16
+  - [116,90, 156,198, 373,326]  # P5/32
+
+# YOLOv8 backbone with CBAM attention
+backbone:
+  # [from, repeats, module, args]
+  - [-1, 1, CBAMConv, [64, 3, 2]]  # 0-P1/2
+  - [-1, 1, CBAMConv, [128, 3, 2]]  # 1-P2/4
+  - [-1, 3, CBAMC2f, [128, True]]
+  - [-1, 1, CBAMConv, [256, 3, 2]]  # 3-P3/8
+  - [-1, 6, CBAMC2f, [256, True]]
+  - [-1, 1, CBAMConv, [512, 3, 2]]  # 5-P4/16
+  - [-1, 6, CBAMC2f, [512, True]]
+  - [-1, 1, CBAMConv, [1024, 3, 2]]  # 7-P5/32
+  - [-1, 3, CBAMC2f, [1024, True]]
+  - [-1, 1, CBAMSPPFast, [1024, 1024, 5]]  # 9
+
+# YOLOv8 head with CBAM attention
+head:
+  - [-1, 1, nn.Upsample, [None, 2, 'nearest']]
+  - [[-1, 6], 1, Concat, [1]]  # cat backbone P4
+  - [-1, 3, CBAMC2f, [512]]  # 12
+
+  - [-1, 1, nn.Upsample, [None, 2, 'nearest']]
+  - [[-1, 4], 1, Concat, [1]]  # cat backbone P3
+  - [-1, 3, CBAMC2f, [256]]  # 15 (P3/8-small)
+
+  - [-1, 1, CBAMConv, [256, 3, 2]]
+  - [[-1, 12], 1, Concat, [1]]  # cat head P4
+  - [-1, 3, CBAMC2f, [512]]  # 18 (P4/16-medium)
+
+  - [-1, 1, CBAMConv, [512, 3, 2]]
+  - [[-1, 9], 1, Concat, [1]]  # cat head P5
+  - [-1, 3, CBAMC2f, [1024]]  # 21 (P5/32-large)
+
+  - [[15, 18, 21], 1, Detect, [nc]]  # Detect(P3, P4, P5)
+
+# Training hyperparameters
+hyperparameters:
+  # Optimizer settings
+  lr0: 0.01  # initial learning rate
+  lrf: 0.01  # final OneCycleLR learning rate (lr0 * lrf)
+  momentum: 0.937  # SGD momentum/Adam beta1
+  weight_decay: 0.0005  # optimizer weight decay 5e-4
+  warmup_epochs: 3.0  # warmup epochs (fractions ok)
+  warmup_momentum: 0.8  # warmup initial momentum
+  warmup_bias_lr: 0.1  # warmup initial bias lr
+  
+  # Loss function weights
+  box: 7.5  # box loss gain
+  cls: 0.5  # cls loss gain
+  dfl: 1.5  # dfl loss gain
+  
+  # Augmentation settings
+  degrees: 15.0  # image rotation (+/- deg)
+  translate: 0.1  # image translation (+/- fraction)
+  scale: 0.5  # image scale (+/- gain)
+  shear: 2.0  # image shear (+/- deg)
+  perspective: 0.0001  # image perspective (+/- fraction), range 0-0.001
+  flipud: 0.5  # image flip up-down (probability)
+  fliplr: 0.5  # image flip left-right (probability)
+  mosaic: 1.0  # image mosaic (probability)
+  mixup: 0.1  # image mixup (probability)
+  copy_paste: 0.1  # segment copy-paste (probability)
+  
+  # HSV augmentation
+  hsv_h: 0.015  # image HSV-Hue augmentation (fraction)
+  hsv_s: 0.7  # image HSV-Saturation augmentation (fraction)
+  hsv_v: 0.4  # image HSV-Value augmentation (fraction)
+  
+  # Advanced augmentation for livestock
+  weather_aug: 0.3  # weather simulation probability
+  lighting_aug: 0.4  # lighting variation probability
+  noise_aug: 0.2  # noise augmentation probability
+
+# CBAM-specific settings
+cbam_settings:
+  channel_reduction: 16  # channel attention reduction ratio
+  spatial_kernel: 7  # spatial attention kernel size
+  attention_dropout: 0.1  # attention dropout rate
+  
+# Model-specific settings
+model_settings:
+  input_size: 640  # input image size
+  stride: [8, 16, 32]  # model strides
+  anchors: 3  # anchors per output layer
+  
+# Training settings optimized for livestock recognition
+training_settings:
+  # Batch and memory settings
+  batch_size: 8  # batch size for P100 GPU
+  accumulate: 2  # gradient accumulation steps
+  
+  # Training schedule
+  epochs: 100  # total training epochs
+  patience: 20  # early stopping patience
+  save_period: 10  # save checkpoint every N epochs
+  
+  # Validation settings
+  val_period: 5  # validate every N epochs
+  conf_thres: 0.25  # confidence threshold for NMS
+  iou_thres: 0.45  # IoU threshold for NMS
+  
+  # Hardware settings
+  device: 'cuda'  # training device
+  workers: 4  # dataloader workers
+  
+# Class names for livestock breeds
+class_names:
+  # Cattle breeds (0-14)
+  - 'Gir'
+  - 'Sahiwal'
+  - 'Red_Sindhi'
+  - 'Tharparkar'
+  - 'Rathi'
+  - 'Hariana'
+  - 'Ongole'
+  - 'Krishna_Valley'
+  - 'Deoni'
+  - 'Khillari'
+  - 'Malvi'
+  - 'Nimari'
+  - 'Dangi'
+  - 'Gaolao'
+  - 'Bachaur'
+  
+  # Buffalo breeds (15-22)
+  - 'Murrah'
+  - 'Mehsana'
+  - 'Surti'
+  - 'Jaffarabadi'
+  - 'Nili_Ravi'
+  - 'Kundi'
+  - 'Bhadawari'
+  - 'Toda'
+
+# Performance targets
+targets:
+  accuracy: 90.0  # minimum classification accuracy (%)
+  map50: 0.85  # minimum mAP@0.5
+  map50_95: 0.60  # minimum mAP@0.5:0.95
+  inference_time: 50  # maximum inference time (ms)
+  model_size: 50  # maximum model size (MB)

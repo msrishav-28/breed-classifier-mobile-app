@@ -1,0 +1,36 @@
+{
+  "model": {
+    "base_model": "vit_base_patch16_224",
+    "embedding_dim": 512,
+    "pretrained_path": "local_finetuned_models/vit_best.pth"
+  },
+  "training": {
+    "epochs": 20,
+    "batch_size": 16,
+    "learning_rate": 1e-5,
+    "weight_decay": 0.01,
+    "triplet_margin": 1.0,
+    "classification_weight": 1.0,
+    "triplet_weight": 0.5,
+    "warmup_epochs": 3
+  },
+  "data": {
+    "image_size": 224,
+    "samples_per_class": 100,
+    "num_workers": 2
+  },
+  "similarity": {
+    "k_neighbors": 5,
+    "similarity_threshold": 0.8,
+    "use_centroids": true
+  },
+  "output": {
+    "save_dir": "metric_learning_models",
+    "save_embeddings": true
+  },
+  "activation_criteria": {
+    "ensemble_accuracy_threshold": 95.0,
+    "low_confidence_threshold": 0.75,
+    "use_for_rare_breeds": true
+  }
+}

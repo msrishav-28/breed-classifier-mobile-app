@@ -1,0 +1,53 @@
+{
+  "hardware": {
+    "gpu_memory_limit_gb": 5.5,
+    "max_batch_size": 12,
+    "min_batch_size": 4,
+    "gradient_accumulation_steps": 4,
+    "use_gradient_checkpointing": true,
+    "use_8bit_optimizer": true,
+    "mixed_precision": true
+  },
+  "training": {
+    "fine_tune_epochs": 10,
+    "learning_rate": 1e-5,
+    "weight_decay": 0.01,
+    "warmup_ratio": 0.1,
+    "max_grad_norm": 1.0,
+    "early_stopping_patience": 5,
+    "save_best_only": true
+  },
+  "data": {
+    "image_size": 224,
+    "max_samples_per_class": 500,
+    "num_workers": 2,
+    "pin_memory": false
+  },
+  "models": {
+    "vit": {
+      "kaggle_model_path": "kaggle_models/best_vit_model.pth",
+      "freeze_backbone_epochs": 3,
+      "unfreeze_lr_multiplier": 0.1
+    },
+    "yolov8_cbam": {
+      "kaggle_model_path": "kaggle_models/best_yolov8_cbam.pt",
+      "freeze_backbone_epochs": 2,
+      "unfreeze_lr_multiplier": 0.1
+    },
+    "efficientnetv2": {
+      "kaggle_model_path": "kaggle_models/best_efficientnetv2.pth",
+      "freeze_backbone_epochs": 2,
+      "unfreeze_lr_multiplier": 0.1
+    }
+  },
+  "output": {
+    "save_dir": "local_finetuned_models",
+    "save_intermediate": true,
+    "export_onnx": true
+  },
+  "targets": {
+    "individual_accuracy_improvement": 2.0,
+    "memory_usage_limit_gb": 5.5,
+    "training_time_limit_hours": 4
+  }
+}

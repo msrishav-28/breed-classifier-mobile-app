@@ -1,0 +1,94 @@
+{
+  "model": {
+    "name": "vit_base_patch16_224",
+    "pretrained": true,
+    "num_classes": 23,
+    "image_size": 224,
+    "dropout_rate": 0.1,
+    "drop_path_rate": 0.1,
+    "freeze_backbone_epochs": 5
+  },
+  "training": {
+    "batch_size": 16,
+    "val_batch_size": 32,
+    "epochs": 30,
+    "learning_rate": 1e-4,
+    "backbone_lr": 1e-5,
+    "weight_decay": 0.01,
+    "warmup_epochs": 3,
+    "gradient_accumulation_steps": 2,
+    "max_grad_norm": 1.0,
+    "early_stopping_patience": 5
+  },
+  "optimization": {
+    "mixed_precision": true,
+    "gradient_checkpointing": true,
+    "compile_model": false,
+    "optimizer": "adamw",
+    "scheduler": "cosine_annealing",
+    "scheduler_params": {
+      "T_max": 30,
+      "eta_min": 1e-6
+    }
+  },
+  "data": {
+    "num_workers": 2,
+    "pin_memory": true,
+    "persistent_workers": false,
+    "validation_split": 0.2,
+    "augmentation_strength": "medium"
+  },
+  "hardware": {
+    "device": "cuda",
+    "gpu_memory_limit": "16GB",
+    "target_platform": "kaggle_p100",
+    "memory_efficient": true
+  },
+  "targets": {
+    "accuracy_target": 92.0,
+    "accuracy_range": [92.0, 95.0],
+    "inference_time_ms": 3000,
+    "model_size_mb": 100
+  },
+  "logging": {
+    "log_level": "INFO",
+    "save_checkpoints": true,
+    "checkpoint_frequency": 5,
+    "save_best_only": true,
+    "metrics_to_track": [
+      "accuracy",
+      "loss",
+      "learning_rate",
+      "gpu_memory"
+    ]
+  },
+  "breeds": {
+    "cattle": [
+      "Gir",
+      "Sahiwal", 
+      "Red_Sindhi",
+      "Tharparkar",
+      "Rathi",
+      "Hariana",
+      "Ongole",
+      "Krishna_Valley",
+      "Deoni",
+      "Khillari",
+      "Malvi",
+      "Nimari",
+      "Dangi",
+      "Gaolao",
+      "Bachaur"
+    ],
+    "buffalo": [
+      "Murrah",
+      "Mehsana",
+      "Surti",
+      "Jaffarabadi",
+      "Nili_Ravi",
+      "Kundi",
+      "Bhadawari",
+      "Toda"
+    ]
+  }
+}
