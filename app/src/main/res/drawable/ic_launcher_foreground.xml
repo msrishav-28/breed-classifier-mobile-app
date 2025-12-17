@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="@color/livestock_green"
+        android:pathData="M54,30C42,30 32,40 32,52C32,64 42,74 54,74C66,74 76,64 76,52C76,40 66,30 54,30ZM54,34C64,34 72,42 72,52C72,62 64,70 54,70C44,70 36,62 36,52C36,42 44,34 54,34Z"/>
+    <path
+        android:fillColor="@color/livestock_green"
+        android:pathData="M48,45L48,59L52,59L52,45L48,45Z"/>
+    <path
+        android:fillColor="@color/livestock_green"
+        android:pathData="M56,45L56,59L60,59L60,45L56,45Z"/>
+</vector>
