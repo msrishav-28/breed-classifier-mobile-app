@@ -1,108 +1,72 @@
-# Cattle and Buffalo Recognition System
+# Breed Classifier
 
-An AI-powered mobile application for accurate livestock breed identification and type classification, designed to support India's livestock sector and the Rashtriya Gokul Mission.
+An offline Android app that identifies Indian cattle and buffalo breeds from
+a photo using an on-device TensorFlow Lite model, and classifies each breed's
+primary use (dairy, draught, dual-purpose). Built for field use in support of
+livestock programmes such as the Rashtriya Gokul Mission: no connectivity
+required, no data leaves the device.
 
-## Overview
+[![CI](../../actions/workflows/ci.yml/badge.svg)](../../actions/workflows/ci.yml)
 
-This Android application uses advanced machine learning techniques to identify cattle and buffalo breeds from images, providing real-time classification with high accuracy. The system combines ensemble learning with offline capabilities to work in rural areas with limited connectivity.
+## What the app does
 
-## Features
+1. **Capture or pick a photo** — CameraX capture screen, or the system photo
+   picker (no storage permission needed).
+2. **Quality check** — brightness, contrast, sharpness and resolution
+   heuristics warn about photos the model will struggle with.
+3. **Classify on device** — a single TFLite model returns the top-3 breeds
+   with confidences; low-confidence results are clearly flagged.
+4. **Breed details** — species, origin, primary use, typical milk yield and
+   traits from a bundled catalog of 24 Indian breeds.
+5. **History & reports** — every classification is stored locally (Room) and
+   can be reopened or exported as a PDF report and shared.
 
-- **Breed Recognition**: Identifies 15+ Indian cattle breeds and 8+ buffalo breeds with 95%+ accuracy
-- **Type Classification**: Categorizes animals as Dairy, Draught, or Dual-purpose
-- **Offline Functionality**: Works without internet connectivity using local ML models
-- **Report Generation**: Creates detailed PDF reports with annotations and metadata
-- **Multi-platform Sharing**: Share results via email, messaging apps, or file transfer
-- **Real-time Processing**: Sub-3-second inference on mid-range smartphones
+The app requires exactly one permission: the camera.
 
-## Technical Architecture
-
-### Machine Learning Models
-- **Vision Transformer (ViT)**: Primary classification model (92%+ accuracy target)
-- **YOLOv8 with CBAM**: Object detection and classification (90%+ accuracy target)
-- **EfficientNetV2**: Ensemble diversity model (88%+ accuracy target)
-- **Ensemble Coordination**: Weighted voting for 95%+ combined accuracy
-
-### Technology Stack
-- **Platform**: Android (API 24+)
-- **Language**: Kotlin
-- **ML Framework**: TensorFlow Lite
-- **Camera**: CameraX API
-- **Database**: Room (SQLite)
-- **UI**: Material Design 3 with Jetpack Compose
-- **Build System**: Gradle with Kotlin DSL
-
-## Project Structure
+## Repository layout
 
 ```
-app/
-├── src/main/
-│   ├── java/com/livestock/recognition/
-│   │   ├── data/           # Data models and database
-│   │   ├── ml/             # Machine learning components
-│   │   ├── ui/             # User interface components
-│   │   └── MainActivity.kt # Main entry point
-│   ├── assets/
-│   │   ├── models/         # TensorFlow Lite models
-│   │   └── data/           # Breed mapping and characteristics
-│   └── res/                # Android resources
-├── src/test/               # Unit tests
-└── src/androidTest/        # Instrumented tests
+app/       Android application (UI, camera, TFLite, Room, PDF reports)
+core/      Pure-JVM Kotlin module: domain models and logic (fully unit-tested)
+training/  Python pipeline that trains and exports the TFLite model
+docs/      Architecture, setup, model contract, testing, release, privacy
 ```
 
-## Requirements
+## Quick start
 
-- Android 7.0 (API level 24) or higher
-- Camera permission for image capture
-- Storage permission for report generation
-- Minimum 3GB RAM for optimal performance
-- 500MB free storage for models and data
+```bash
+git clone <this repo>
+cd breed-classifier-mobile-app
+./gradlew :app:assembleDebug     # requires JDK 17 + Android SDK 35
+```
 
-## Development Setup
+Open in Android Studio (Ladybug or newer) and run on a device or emulator
+(minSdk 24).
 
-1. Clone the repository
-2. Open in Android Studio Arctic Fox or later
-3. Sync Gradle dependencies
-4. Add ML models to `app/src/main/assets/models/` (see models README)
-5. Build and run on device or emulator
+**Note on the model:** trained model binaries are not committed. Without one
+the app builds and runs — it shows a clear "model not installed" state and
+history still works. To enable classification, train or obtain a model and
+drop it into `app/src/main/assets/models/` (see
+[docs/MODEL.md](docs/MODEL.md) and [training/README.md](training/README.md)).
 
-## Model Training
+## Documentation
 
-The system uses a hybrid training approach:
+| Document | Contents |
+|----------|----------|
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Modules, layers, data flow, key decisions |
+| [docs/SETUP.md](docs/SETUP.md) | Development environment setup |
+| [docs/MODEL.md](docs/MODEL.md) | The TFLite model contract the app enforces |
+| [docs/TESTING.md](docs/TESTING.md) | Test strategy, running tests, manual QA checklist |
+| [docs/RELEASE.md](docs/RELEASE.md) | Release checklist, signing, versioning |
+| [docs/PRIVACY.md](docs/PRIVACY.md) | Data handling facts for a privacy policy |
+| [docs/AUDIT.md](docs/AUDIT.md) | The audit that motivated the 2026 production rebuild |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Workflow and standards for contributors |
 
-1. **Phase 1**: Heavy compute training on Kaggle GPU (P100, 16GB VRAM)
-2. **Phase 2**: Local fine-tuning on RTX 3050 (6GB VRAM)
-3. **Dataset**: 22,000+ images with advanced augmentation (30,000-40,000 total)
-4. **Techniques**: Mixed precision, gradient accumulation, metric learning
+## Status
 
-## Performance Targets
-
-- **Accuracy**: 95%+ ensemble accuracy across all breeds
-- **Speed**: <3 seconds processing time on mid-range devices
-- **Memory**: <300MB during active use
-- **Battery**: <5% drain per 100 inferences
-- **Model Size**: <200MB total for ensemble
-
-## Testing Strategy
-
-- **Unit Tests**: Specific examples and edge cases
-- **Property-Based Tests**: Universal properties across all inputs
-- **Integration Tests**: End-to-end workflow validation
-- **Performance Tests**: Benchmarking on target devices
-
-## Contributing
-
-This project follows the spec-driven development methodology:
-
-1. Requirements gathering with EARS patterns
-2. Comprehensive design with correctness properties
-3. Implementation plan with actionable tasks
-4. Property-based testing for verification
-
-## License
-
-This project is developed for the Smart India Hackathon 2025 (SIH25004 & SIH25005).
-
-## Support
-
-For technical issues or questions, please refer to the project documentation in the `.kiro/specs/` directory.
+Software is production-ready and CI-gated (build, lint, unit + property
+tests). Shipping to a store still requires: a trained model bundled in the
+APK, release signing, store listing assets, and a hosted privacy policy —
+tracked in [docs/RELEASE.md](docs/RELEASE.md). This repository currently has
+no license file; add one before accepting external contributions or
+publishing binaries.
