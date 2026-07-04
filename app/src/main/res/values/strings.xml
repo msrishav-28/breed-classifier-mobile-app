@@ -59,11 +59,8 @@
 
     <!-- Animal types -->
     <string name="animal_type_dairy">Dairy</string>
-    <string name="animal_type_dairy_description">Bred primarily for milk production</string>
     <string name="animal_type_draught">Draught</string>
-    <string name="animal_type_draught_description">Bred primarily for farm work and transport</string>
     <string name="animal_type_dual_purpose">Dual-purpose</string>
-    <string name="animal_type_dual_purpose_description">Suited to both milk production and farm work</string>
 
     <!-- Errors -->
     <string name="error_image_load">The image could not be loaded</string>

@@ -28,11 +28,7 @@ class HistoryViewModel(application: Application) : AndroidViewModel(application)
     /** Clears the entire history including stored photos. */
     fun clearAll() {
         viewModelScope.launch {
-            val current = entries.value.orEmpty()
-            current.forEach { entry ->
-                container.historyRepository.delete(entry.id)
-                ImageFiles.delete(entry.imagePath)
-            }
+            container.historyRepository.clear().forEach { ImageFiles.delete(it) }
         }
     }
 }

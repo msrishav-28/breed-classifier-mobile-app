@@ -21,13 +21,6 @@ fun AnimalType.displayNameRes(): Int = when (this) {
 }
 
 @StringRes
-fun AnimalType.descriptionRes(): Int = when (this) {
-    AnimalType.DAIRY -> R.string.animal_type_dairy_description
-    AnimalType.DRAUGHT -> R.string.animal_type_draught_description
-    AnimalType.DUAL_PURPOSE -> R.string.animal_type_dual_purpose_description
-}
-
-@StringRes
 fun QualityIssue.messageRes(): Int = when (this) {
     QualityIssue.LOW_RESOLUTION -> R.string.quality_issue_low_resolution
     QualityIssue.TOO_DARK -> R.string.quality_issue_too_dark

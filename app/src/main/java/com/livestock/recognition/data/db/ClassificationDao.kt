@@ -14,6 +14,9 @@ interface ClassificationDao {
     @Query("SELECT * FROM classifications WHERE id = :id")
     suspend fun getById(id: Long): ClassificationEntity?
 
+    @Query("SELECT image_path FROM classifications")
+    suspend fun getAllImagePaths(): List<String>
+
     @Insert
     suspend fun insert(entity: ClassificationEntity): Long
 

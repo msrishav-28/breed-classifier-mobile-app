@@ -36,4 +36,11 @@ class HistoryRepository(private val dao: ClassificationDao) {
         dao.deleteById(id)
         return imagePath
     }
+
+    /** Deletes all rows and returns the orphaned image paths. */
+    suspend fun clear(): List<String> {
+        val imagePaths = dao.getAllImagePaths()
+        dao.deleteAll()
+        return imagePaths
+    }
 }
