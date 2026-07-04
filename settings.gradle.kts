@@ -1,10 +1,17 @@
 pluginManagement {
     repositories {
-        google()
+        google {
+            content {
+                includeGroupByRegex("com\\.android.*")
+                includeGroupByRegex("com\\.google.*")
+                includeGroupByRegex("androidx.*")
+            }
+        }
         mavenCentral()
         gradlePluginPortal()
     }
 }
+
 dependencyResolutionManagement {
     repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
     repositories {
@@ -13,5 +20,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Cattle Buffalo Recognition"
+rootProject.name = "breed-classifier"
+
 include(":app")
+include(":core")

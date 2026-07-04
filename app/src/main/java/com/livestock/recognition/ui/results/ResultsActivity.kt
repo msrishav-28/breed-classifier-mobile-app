@@ -2,183 +2,201 @@ package com.livestock.recognition.ui.results
 
 import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.view.View
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import com.livestock.recognition.R
-import com.livestock.recognition.data.models.ClassificationResult
+import com.livestock.recognition.core.catalog.BreedNames
 import com.livestock.recognition.databinding.ActivityResultsBinding
-import com.livestock.recognition.services.ImageAnnotationService
+import com.livestock.recognition.image.BitmapLoader
+import com.livestock.recognition.report.ReportSharer
+import com.livestock.recognition.ui.common.confidencePercent
+import com.livestock.recognition.ui.common.displayNameRes
+import com.livestock.recognition.ui.common.formatDateTime
+import com.livestock.recognition.ui.common.messageRes
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
- * ResultsActivity displays comprehensive breed identification results with detailed information.
- * Shows breed name, type, confidence scores, characteristics, and warning messages for low confidence.
- * 
- * Requirements: 2.5, 3.3, 7.3
+ * Shows the outcome of a classification: photo, best match with confidence,
+ * alternatives, catalog information and warnings. Supports sharing a PDF
+ * report.
  */
 class ResultsActivity : AppCompatActivity() {
-    
+
     private lateinit var binding: ActivityResultsBinding
     private lateinit var viewModel: ResultsViewModel
-    private lateinit var annotationService: ImageAnnotationService
-    
-    companion object {
-        const val EXTRA_CLASSIFICATION_RESULT = "extra_classification_result"
-        const val EXTRA_IMAGE_PATH = "extra_image_path"
-        
-        fun createIntent(context: Context, result: ClassificationResult, imagePath: String): Intent {
-            return Intent(context, ResultsActivity::class.java).apply {
-                putExtra(EXTRA_CLASSIFICATION_RESULT, result)
-                putExtra(EXTRA_IMAGE_PATH, imagePath)
-            }
-        }
-    }
-    
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityResultsBinding.inflate(layoutInflater)
         setContentView(binding.root)
-        
+
         viewModel = ViewModelProvider(this)[ResultsViewModel::class.java]
-        annotationService = ImageAnnotationService()
-        
-        // Get data from intent
-        val classificationResult = intent.getParcelableExtra<ClassificationResult>(EXTRA_CLASSIFICATION_RESULT)
+
+        binding.toolbar.setNavigationOnClickListener { finish() }
+        binding.shareButton.setOnClickListener { viewModel.shareReport() }
+        binding.doneButton.setOnClickListener { finish() }
+
+        observeState()
+        observeShareEvents()
+        start()
+    }
+
+    private fun start() {
+        val recordId = intent.getLongExtra(EXTRA_RECORD_ID, NO_RECORD)
         val imagePath = intent.getStringExtra(EXTRA_IMAGE_PATH)
-        
-        if (classificationResult == null || imagePath == null) {
-            finish()
+        when {
+            recordId != NO_RECORD -> viewModel.loadSavedClassification(recordId)
+            imagePath != null -> viewModel.startNewClassification(imagePath)
+            else -> finish()
+        }
+    }
+
+    private fun observeState() {
+        viewModel.state.observe(this) { state ->
+            binding.loadingGroup.visibility =
+                if (state is ResultsViewModel.UiState.Loading) View.VISIBLE else View.GONE
+            binding.contentScroll.visibility =
+                if (state is ResultsViewModel.UiState.Ready) View.VISIBLE else View.GONE
+            binding.buttonBar.visibility =
+                if (state is ResultsViewModel.UiState.Ready) View.VISIBLE else View.GONE
+            binding.errorGroup.visibility =
+                if (state is ResultsViewModel.UiState.Error ||
+                    state is ResultsViewModel.UiState.ModelUnavailable
+                ) View.VISIBLE else View.GONE
+
+            when (state) {
+                is ResultsViewModel.UiState.Ready -> renderResult(state)
+                is ResultsViewModel.UiState.Error ->
+                    binding.errorText.text = getString(state.messageRes)
+                is ResultsViewModel.UiState.ModelUnavailable -> {
+                    binding.errorText.text = getString(R.string.model_unavailable_message)
+                    binding.errorDetailText.visibility = View.VISIBLE
+                    binding.errorDetailText.text = state.detail
+                }
+                is ResultsViewModel.UiState.Loading -> Unit
+            }
+        }
+    }
+
+    private fun observeShareEvents() {
+        viewModel.shareEvent.observe(this) { event ->
+            binding.shareButton.isEnabled = event != ResultsViewModel.ShareEvent.InProgress
+            when (event) {
+                is ResultsViewModel.ShareEvent.Ready -> {
+                    startActivity(ReportSharer.shareIntent(this, event.report))
+                    viewModel.consumeShareEvent()
+                }
+                is ResultsViewModel.ShareEvent.Failed -> {
+                    Toast.makeText(this, R.string.error_report_generation, Toast.LENGTH_LONG).show()
+                    viewModel.consumeShareEvent()
+                }
+                else -> Unit
+            }
+        }
+    }
+
+    private fun renderResult(state: ResultsViewModel.UiState.Ready) {
+        loadPhoto(state.imagePath)
+
+        val record = state.record
+        binding.breedNameText.text = BreedNames.displayName(record.breedLabel)
+        binding.confidenceText.text =
+            getString(R.string.confidence_format, confidencePercent(record.confidence))
+        binding.confidenceBar.progress = confidencePercent(record.confidence)
+
+        val type = record.animalType
+        binding.animalTypeText.visibility = if (type != null) View.VISIBLE else View.GONE
+        type?.let { binding.animalTypeText.text = getString(it.displayNameRes()) }
+
+        if (record.alternatives.isEmpty()) {
+            binding.alternativesText.visibility = View.GONE
+        } else {
+            binding.alternativesText.visibility = View.VISIBLE
+            binding.alternativesText.text = getString(
+                R.string.alternatives_format,
+                record.alternatives.joinToString(", ") {
+                    "${BreedNames.displayName(it.label)} (${confidencePercent(it.confidence)}%)"
+                }
+            )
+        }
+
+        renderWarnings(state)
+        renderBreedInfo(state)
+
+        binding.processingInfoText.text = getString(
+            R.string.processing_info_format,
+            formatDateTime(record.capturedAtEpochMillis),
+            record.processingTimeMillis,
+        )
+    }
+
+    private fun renderWarnings(state: ResultsViewModel.UiState.Ready) {
+        val warnings = mutableListOf<String>()
+        if (state.showConfidenceWarning) {
+            warnings.add(getString(R.string.low_confidence_warning))
+        }
+        state.qualityIssues.forEach { warnings.add(getString(it.messageRes())) }
+
+        binding.warningCard.visibility = if (warnings.isEmpty()) View.GONE else View.VISIBLE
+        binding.warningText.text = warnings.joinToString("\n")
+    }
+
+    private fun renderBreedInfo(state: ResultsViewModel.UiState.Ready) {
+        val info = state.breedInfo
+        if (info == null) {
+            binding.breedInfoCard.visibility = View.GONE
             return
         }
-        
-        // Initialize UI
-        setupUI()
-        
-        // Load and display results
-        viewModel.loadResults(classificationResult, imagePath)
-        
-        // Observe view model
-        observeViewModel()
+        binding.breedInfoCard.visibility = View.VISIBLE
+        binding.speciesText.text = getString(R.string.species_format, info.species)
+        binding.originText.text = getString(R.string.origin_format, info.origin)
+
+        binding.milkYieldText.visibility = if (info.hasMilkYield) View.VISIBLE else View.GONE
+        if (info.hasMilkYield) {
+            binding.milkYieldText.text = getString(
+                R.string.milk_yield_format,
+                info.milkYieldMinLitresPerDay,
+                info.milkYieldMaxLitresPerDay,
+            )
+        }
+
+        binding.characteristicsText.visibility =
+            if (info.characteristics.isEmpty()) View.GONE else View.VISIBLE
+        binding.characteristicsText.text =
+            info.characteristics.joinToString(separator = "\n") { "• $it" }
     }
-    
-    private fun setupUI() {
-        // Set up back button
-        binding.backButton.setOnClickListener {
-            finish()
-        }
-        
-        // Set up share button
-        binding.shareButton.setOnClickListener {
-            viewModel.shareResults()
-        }
-        
-        // Set up retake button
-        binding.retakeButton.setOnClickListener {
-            finish() // Return to previous screen for retaking
-        }
-    }
-    
-    private fun observeViewModel() {
-        viewModel.resultsState.observe(this) { state ->
-            when (state) {
-                is ResultsState.Loading -> {
-                    binding.progressBar.visibility = View.VISIBLE
-                    binding.contentScrollView.visibility = View.GONE
-                }
-                is ResultsState.Success -> {
-                    binding.progressBar.visibility = View.GONE
-                    binding.contentScrollView.visibility = View.VISIBLE
-                    displayResults(state.data)
-                }
-                is ResultsState.Error -> {
-                    binding.progressBar.visibility = View.GONE
-                    binding.errorText.visibility = View.VISIBLE
-                    binding.errorText.text = state.message
-                }
+
+    private fun loadPhoto(imagePath: String) {
+        lifecycleScope.launch {
+            val bitmap = withContext(Dispatchers.IO) {
+                BitmapLoader.decode(imagePath, PHOTO_MAX_DIMENSION)
             }
-        }
-        
-        viewModel.warningMessage.observe(this) { warning ->
-            if (warning != null) {
-                binding.warningCard.visibility = View.VISIBLE
-                binding.warningText.text = warning
-                binding.retakeButton.visibility = View.VISIBLE
+            if (bitmap != null) {
+                binding.photoView.setImageBitmap(bitmap)
             } else {
-                binding.warningCard.visibility = View.GONE
-                binding.retakeButton.visibility = View.GONE
+                binding.photoView.setImageResource(R.drawable.ic_gallery)
             }
         }
     }
-    
-    private fun displayResults(data: ResultsDisplayData) {
-        // Display captured image with annotations
-        val originalBitmap = BitmapFactory.decodeFile(data.imagePath)
-        val annotatedBitmap = annotationService.createAnnotatedImage(
-            originalBitmap,
-            data.classificationResult
-        )
-        binding.capturedImage.setImageBitmap(annotatedBitmap)
-        
-        // Display breed information
-        binding.breedNameText.text = data.classificationResult.breed
-        binding.confidenceText.text = getString(
-            R.string.confidence_format, 
-            (data.classificationResult.breedConfidence * 100).toInt()
-        )
-        
-        // Display animal type
-        binding.animalTypeText.text = data.classificationResult.animalType.displayName
-        binding.typeDescriptionText.text = data.classificationResult.animalType.description
-        binding.typeConfidenceText.text = getString(
-            R.string.type_confidence_format,
-            (data.classificationResult.typeConfidence * 100).toInt()
-        )
-        
-        // Display breed characteristics if available
-        data.breedInfo?.let { breedInfo ->
-            binding.breedInfoCard.visibility = View.VISIBLE
-            binding.scientificNameText.text = breedInfo.scientificName
-            binding.originText.text = breedInfo.origin
-            
-            // Display milk yield range
-            if (breedInfo.averageMilkYieldMin > 0 || breedInfo.averageMilkYieldMax > 0) {
-                binding.milkYieldText.text = getString(
-                    R.string.milk_yield_format,
-                    breedInfo.averageMilkYieldMin,
-                    breedInfo.averageMilkYieldMax
-                )
-                binding.milkYieldText.visibility = View.VISIBLE
-            } else {
-                binding.milkYieldText.visibility = View.GONE
-            }
-            
-            // Display characteristics
-            if (breedInfo.characteristics.isNotEmpty()) {
-                binding.characteristicsText.text = breedInfo.characteristics.joinToString("\n• ", "• ")
-                binding.characteristicsText.visibility = View.VISIBLE
-            } else {
-                binding.characteristicsText.visibility = View.GONE
-            }
-        } ?: run {
-            binding.breedInfoCard.visibility = View.GONE
-        }
-        
-        // Display processing information
-        binding.processingTimeText.text = getString(
-            R.string.processing_time_format,
-            data.classificationResult.processingTime
-        )
-        
-        // Display image metadata
-        val metadata = data.classificationResult.imageMetadata
-        binding.imageInfoText.text = getString(
-            R.string.image_info_format,
-            metadata.width,
-            metadata.height,
-            metadata.qualityScore
-        )
+
+    companion object {
+        private const val EXTRA_IMAGE_PATH = "extra_image_path"
+        private const val EXTRA_RECORD_ID = "extra_record_id"
+        private const val NO_RECORD = -1L
+        private const val PHOTO_MAX_DIMENSION = 1280
+
+        fun newClassificationIntent(context: Context, imagePath: String): Intent =
+            Intent(context, ResultsActivity::class.java)
+                .putExtra(EXTRA_IMAGE_PATH, imagePath)
+
+        fun savedRecordIntent(context: Context, recordId: Long): Intent =
+            Intent(context, ResultsActivity::class.java)
+                .putExtra(EXTRA_RECORD_ID, recordId)
     }
 }

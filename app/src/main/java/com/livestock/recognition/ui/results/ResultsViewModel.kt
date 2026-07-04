@@ -1,108 +1,173 @@
 package com.livestock.recognition.ui.results
 
 import android.app.Application
+import android.graphics.Bitmap
+import androidx.annotation.StringRes
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
-import com.livestock.recognition.data.models.BreedInfo
-import com.livestock.recognition.data.models.ClassificationResult
-import com.livestock.recognition.services.TypeClassificationService
+import com.livestock.recognition.LivestockApp
+import com.livestock.recognition.R
+import com.livestock.recognition.core.classify.ConfidencePolicy
+import com.livestock.recognition.core.model.BreedInfo
+import com.livestock.recognition.core.model.ClassificationRecord
+import com.livestock.recognition.core.quality.QualityIssue
+import com.livestock.recognition.core.report.ReportContentBuilder
+import com.livestock.recognition.image.BitmapLoader
+import com.livestock.recognition.image.ImageQualityAnalyzer
+import com.livestock.recognition.ml.ClassificationException
+import com.livestock.recognition.ml.ClassifierProvider
+import com.livestock.recognition.ui.common.formatDateTime
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 
 /**
- * ViewModel for managing results display state and breed information loading.
- * Handles low confidence warnings and breed characteristic retrieval.
+ * Drives the results screen for both flows: classifying a fresh image and
+ * re-opening a stored history entry.
  */
 class ResultsViewModel(application: Application) : AndroidViewModel(application) {
-    
-    private val typeClassificationService = TypeClassificationService(application)
-    
-    private val _resultsState = MutableLiveData<ResultsState>()
-    val resultsState: LiveData<ResultsState> = _resultsState
-    
-    private val _warningMessage = MutableLiveData<String?>()
-    val warningMessage: LiveData<String?> = _warningMessage
-    
-    companion object {
-        private const val LOW_CONFIDENCE_THRESHOLD = 0.75f
+
+    sealed interface UiState {
+        data object Loading : UiState
+
+        data class Ready(
+            val record: ClassificationRecord,
+            val breedInfo: BreedInfo?,
+            val qualityIssues: List<QualityIssue>,
+            val imagePath: String,
+            val showConfidenceWarning: Boolean,
+        ) : UiState
+
+        data class ModelUnavailable(val detail: String) : UiState
+
+        data class Error(@StringRes val messageRes: Int) : UiState
     }
-    
-    fun loadResults(classificationResult: ClassificationResult, imagePath: String) {
-        _resultsState.value = ResultsState.Loading
-        
+
+    sealed interface ShareEvent {
+        data class Ready(val report: File) : ShareEvent
+        data object Failed : ShareEvent
+        data object InProgress : ShareEvent
+    }
+
+    private val container get() = getApplication<LivestockApp>().container
+
+    private val _state = MutableLiveData<UiState>()
+    val state: LiveData<UiState> = _state
+
+    private val _shareEvent = MutableLiveData<ShareEvent?>()
+    val shareEvent: LiveData<ShareEvent?> = _shareEvent
+
+    private var started = false
+
+    /** Classifies a freshly captured or picked image and stores the result. */
+    fun startNewClassification(imagePath: String) {
+        if (started) return
+        started = true
+        _state.value = UiState.Loading
+
         viewModelScope.launch {
-            try {
-                val resultsData = withContext(Dispatchers.IO) {
-                    // Initialize type classification service if needed
-                    val initResult = typeClassificationService.initialize()
-                    if (!initResult.isValid) {
-                        throw Exception("Failed to initialize breed database: ${initResult.errors.joinToString()}")
-                    }
-                    
-                    // Get breed information
-                    val breedInfo = typeClassificationService.getBreedCharacteristics(classificationResult.breed)
-                    
-                    ResultsDisplayData(
-                        classificationResult = classificationResult,
-                        imagePath = imagePath,
-                        breedInfo = breedInfo
-                    )
+            val bitmap = withContext(Dispatchers.IO) {
+                BitmapLoader.decode(imagePath, DECODE_MAX_DIMENSION)
+            }
+            if (bitmap == null) {
+                _state.value = UiState.Error(R.string.error_image_load)
+                return@launch
+            }
+
+            val quality = withContext(Dispatchers.Default) {
+                ImageQualityAnalyzer.analyze(bitmap)
+            }
+
+            when (val classifierState = container.classifierProvider.get()) {
+                is ClassifierProvider.State.Unavailable -> {
+                    _state.value = UiState.ModelUnavailable(classifierState.reason)
                 }
-                
-                _resultsState.value = ResultsState.Success(resultsData)
-                
-                // Check for low confidence warnings
-                checkConfidenceWarnings(classificationResult)
-                
-            } catch (e: Exception) {
-                _resultsState.value = ResultsState.Error("Failed to load results: ${e.message}")
+                is ClassifierProvider.State.Ready -> {
+                    try {
+                        val output = classifierState.classifier.classify(bitmap)
+                        val best = output.predictions.first()
+                        val catalog = container.breedCatalogProvider.catalog
+                        val record = ClassificationRecord(
+                            breedLabel = best.label,
+                            confidence = best.confidence,
+                            animalType = catalog?.find(best.label)?.type,
+                            alternatives = output.predictions.drop(1),
+                            capturedAtEpochMillis = System.currentTimeMillis(),
+                            processingTimeMillis = output.processingTimeMillis,
+                            modelVersion = output.modelVersion,
+                        )
+                        container.historyRepository.save(record, imagePath)
+                        _state.value = readyState(record, imagePath, quality.issues)
+                    } catch (e: ClassificationException) {
+                        _state.value = UiState.Error(R.string.error_classification)
+                    }
+                }
             }
         }
     }
-    
-    private fun checkConfidenceWarnings(result: ClassificationResult) {
-        val warnings = mutableListOf<String>()
-        
-        if (result.breedConfidence < LOW_CONFIDENCE_THRESHOLD) {
-            warnings.add("Low breed identification confidence (${(result.breedConfidence * 100).toInt()}%)")
-        }
-        
-        if (result.typeConfidence < LOW_CONFIDENCE_THRESHOLD) {
-            warnings.add("Low type classification confidence (${(result.typeConfidence * 100).toInt()}%)")
-        }
-        
-        if (warnings.isNotEmpty()) {
-            val warningText = warnings.joinToString("\n") + 
-                "\n\nConsider retaking the photo with better lighting and clearer view of the animal."
-            _warningMessage.value = warningText
-        } else {
-            _warningMessage.value = null
+
+    /** Re-opens a previously stored classification. */
+    fun loadSavedClassification(id: Long) {
+        if (started) return
+        started = true
+        _state.value = UiState.Loading
+
+        viewModelScope.launch {
+            val saved = container.historyRepository.get(id)
+            if (saved == null) {
+                _state.value = UiState.Error(R.string.error_record_missing)
+            } else {
+                _state.value = readyState(saved.record, saved.imagePath, emptyList())
+            }
         }
     }
-    
-    fun shareResults() {
-        // This would trigger sharing functionality
-        // Implementation would depend on integration with ReportGenerationService
+
+    fun shareReport() {
+        val current = _state.value as? UiState.Ready ?: return
+        if (_shareEvent.value == ShareEvent.InProgress) return
+        _shareEvent.value = ShareEvent.InProgress
+
+        viewModelScope.launch {
+            try {
+                val photo: Bitmap? = withContext(Dispatchers.IO) {
+                    BitmapLoader.decode(current.imagePath, REPORT_IMAGE_MAX_DIMENSION)
+                }
+                val content = ReportContentBuilder.build(
+                    record = current.record,
+                    breedInfo = current.breedInfo,
+                    generatedAt = formatDateTime(System.currentTimeMillis()),
+                    capturedAt = formatDateTime(current.record.capturedAtEpochMillis),
+                )
+                val file = container.reportGenerator.generate(content, photo)
+                photo?.recycle()
+                _shareEvent.value = ShareEvent.Ready(file)
+            } catch (e: Exception) {
+                _shareEvent.value = ShareEvent.Failed
+            }
+        }
+    }
+
+    fun consumeShareEvent() {
+        _shareEvent.value = null
+    }
+
+    private fun readyState(
+        record: ClassificationRecord,
+        imagePath: String,
+        qualityIssues: List<QualityIssue>,
+    ): UiState.Ready = UiState.Ready(
+        record = record,
+        breedInfo = container.breedCatalogProvider.catalog?.find(record.breedLabel),
+        qualityIssues = qualityIssues,
+        imagePath = imagePath,
+        showConfidenceWarning = ConfidencePolicy.requiresWarning(record.confidence),
+    )
+
+    private companion object {
+        const val DECODE_MAX_DIMENSION = 1280
+        const val REPORT_IMAGE_MAX_DIMENSION = 800
     }
 }
-
-/**
- * Sealed class representing different results display states
- */
-sealed class ResultsState {
-    object Loading : ResultsState()
-    data class Success(val data: ResultsDisplayData) : ResultsState()
-    data class Error(val message: String) : ResultsState()
-}
-
-/**
- * Data class containing all information needed for results display
- */
-data class ResultsDisplayData(
-    val classificationResult: ClassificationResult,
-    val imagePath: String,
-    val breedInfo: BreedInfo?
-)

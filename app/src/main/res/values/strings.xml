@@ -1,46 +1,70 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Cattle Buffalo Recognition</string>
-    <string name="camera_permission_required">Camera permission is required to capture images</string>
-    <string name="storage_permission_required">Storage permission is required to save reports</string>
-    <string name="capture_image">Capture Image</string>
-    <string name="processing">Processing...</string>
-    <string name="retry">Retry</string>
-    <string name="share_report">Share Report</string>
-    <string name="export_pdf">Export PDF</string>
-    <string name="breed_name">Breed Name</string>
-    <string name="animal_type">Animal Type</string>
-    <string name="confidence">Confidence</string>
-    <string name="characteristics">Characteristics</string>
-    <string name="low_confidence_warning">Low confidence prediction. Consider retaking the photo.</string>
-    <string name="image_quality_poor">Image quality is poor. Please improve lighting or reduce blur.</string>
-    <string name="multiple_animals_detected">Multiple animals detected. Please frame a single animal.</string>
-    <string name="processing_error">Error processing image. Please try again.</string>
-    <string name="model_loading_error">Unable to load recognition model. Please restart the app.</string>
-    <string name="offline_mode">Offline Mode</string>
-    <string name="results_cached">Results cached for later synchronization</string>
-    
-    <!-- Camera Activity Strings -->
+    <string name="app_name">Breed Classifier</string>
+
+    <!-- Home screen -->
+    <string name="home_title">Identify cattle &amp; buffalo breeds</string>
+    <string name="home_subtitle">Point the camera at a single animal, or pick a photo. Recognition runs entirely on your device.</string>
+    <string name="take_photo">Take photo</string>
+    <string name="pick_from_gallery">Choose from gallery</string>
+    <string name="view_history">View history</string>
+    <string name="offline_note">Works offline — photos never leave this device.</string>
+    <string name="model_missing_title">Recognition model not installed</string>
+    <string name="model_missing_body">This build does not include a trained model. You can still browse history; see docs/MODEL.md in the project for how to bundle a model.</string>
+
+    <!-- Camera screen -->
+    <string name="camera_permission_required">Camera permission is required to capture photos</string>
+    <string name="camera_start_error">The camera could not be started</string>
+    <string name="camera_capture_error">The photo could not be captured</string>
+    <string name="capture_button">Capture photo</string>
     <string name="back_button">Back</string>
-    <string name="capture_button">Capture Photo</string>
-    <string name="camera_ready">Camera Ready</string>
-    <string name="camera_initializing">Initializing Camera...</string>
-    <string name="camera_capturing">Capturing...</string>
-    
-    <!-- Results Activity Strings -->
-    <string name="results_title">Recognition Results</string>
-    <string name="share_button">Share</string>
-    <string name="retake_photo">Retake Photo</string>
-    <string name="breed_identification">Breed Identification</string>
-    <string name="breed_information">Breed Information</string>
-    <string name="scientific_name">Scientific Name:</string>
-    <string name="origin">Origin:</string>
-    <string name="processing_info">Processing Information</string>
-    <string name="captured_image">Captured Image</string>
-    <string name="error_loading_results">Error loading results</string>
-    <string name="confidence_format">Confidence: %d%%</string>
-    <string name="type_confidence_format">Type Confidence: %d%%</string>
-    <string name="milk_yield_format">Average Milk Yield: %d-%d liters/year</string>
-    <string name="processing_time_format">Processing Time: %d ms</string>
-    <string name="image_info_format">Image: %dx%d, Quality: %.2f</string>
+    <string name="camera_hint">Frame a single animal, side-on if possible</string>
+
+    <!-- Results screen -->
+    <string name="results_title">Result</string>
+    <string name="analyzing">Analysing photo…</string>
+    <string name="captured_photo">Captured photo of the animal</string>
+    <string name="best_match">Best match</string>
+    <string name="confidence_format">%d%% confidence</string>
+    <string name="alternatives_format">Also possible: %s</string>
+    <string name="about_breed">About this breed</string>
+    <string name="species_format">Species: %s</string>
+    <string name="origin_format">Origin: %s</string>
+    <string name="milk_yield_format">Typical milk yield: %1$d–%2$d litres/day</string>
+    <string name="processing_info_format">Captured %1$s · processed in %2$d ms on device</string>
+    <string name="share_report">Share report</string>
+    <string name="done">Done</string>
+    <string name="low_confidence_warning">Low confidence — retake the photo with the whole animal clearly visible.</string>
+    <string name="model_unavailable_message">No recognition model is bundled with this build, so the photo could not be classified.</string>
+
+    <!-- Image quality warnings -->
+    <string name="quality_issue_low_resolution">The photo resolution is very low.</string>
+    <string name="quality_issue_too_dark">The photo is quite dark — try better lighting.</string>
+    <string name="quality_issue_too_bright">The photo is overexposed — avoid direct glare.</string>
+    <string name="quality_issue_low_contrast">The photo has low contrast.</string>
+    <string name="quality_issue_blurry">The photo looks blurry — hold the phone steady.</string>
+
+    <!-- History screen -->
+    <string name="history_title">History</string>
+    <string name="history_empty_title">No classifications yet</string>
+    <string name="history_empty_body">Photos you classify will appear here.</string>
+    <string name="clear_history">Clear history</string>
+    <string name="clear_history_title">Clear all history?</string>
+    <string name="clear_history_message">All saved classifications and their photos will be removed from this device.</string>
+    <string name="delete_entry_title">Delete this entry?</string>
+    <string name="delete_entry_message">The classification and its photo will be removed from this device.</string>
+    <string name="delete">Delete</string>
+    <string name="history_thumbnail">Photo thumbnail</string>
+    <string name="percent_format">%d%%</string>
+
+    <!-- Animal types -->
+    <string name="animal_type_dairy">Dairy</string>
+    <string name="animal_type_draught">Draught</string>
+    <string name="animal_type_dual_purpose">Dual-purpose</string>
+
+    <!-- Errors -->
+    <string name="error_image_load">The image could not be loaded</string>
+    <string name="error_classification">Something went wrong while classifying the photo</string>
+    <string name="error_record_missing">This history entry no longer exists</string>
+    <string name="error_report_generation">The report could not be generated</string>
 </resources>

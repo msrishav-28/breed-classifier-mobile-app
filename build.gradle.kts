@@ -1,5 +1,6 @@
-// Top-level build file where you can add configuration options common to all sub-projects/modules.
-plugins {
-    id("com.android.application") version "8.2.0" apply false
-    id("org.jetbrains.kotlin.android") version "1.9.10" apply false
+// Root build script. Plugin versions are declared in gradle/libs.versions.toml
+// and applied by the individual modules; nothing is applied at the root so that
+// the pure-JVM :core module can be built without the Android toolchain present.
+tasks.register("clean", Delete::class) {
+    delete(rootProject.layout.buildDirectory)
 }
