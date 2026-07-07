@@ -6,7 +6,7 @@
 |-------|-------|------|-------------|
 | Domain logic | `core/src/test` | Catalog parsing, name normalisation, prediction post-processing, confidence policy, quality metrics/policy, report content | JUnit 5 + Kotest, including property-based tests; pure JVM, no SDK |
 | App logic | `app/src/test` | Entity↔domain mapping, alternatives codec, subsampling math, validation of the real bundled CSV asset | JUnit 5 on the JVM |
-| UI smoke | `app/src/androidTest` | Home screen launches, primary actions visible | Espresso on a device/emulator; CI compiles it every run |
+| On-device E2E | `app/src/androidTest` | Home screen smoke; real TFLite inference through `TfLiteBreedClassifier` against the committed fixture model and images, incl. catalog resolution; the degraded "model unavailable" results screen | Espresso/JUnit4 on an emulator; CI runs the full suite on an Android 11 emulator every push |
 
 Property-based tests carry real weight here: they already caught a
 normalisation idempotency bug during development (`BreedNames.normalize("_")`).
@@ -22,8 +22,19 @@ Prefer a property over an example when a function has an algebraic guarantee
 ./gradlew :app:connectedDebugAndroidTest   # device required
 ```
 
-CI runs all of the above except the connected test (no emulator), plus debug
-and release assembly, on every push and pull request.
+CI runs all of the above on every push and pull request: the `build` job
+covers unit tests, lint and debug/release assembly; the `e2e` job boots a
+hardware-accelerated emulator and runs the instrumented suite, exercising
+real TFLite inference end to end.
+
+### The fixture model
+
+`app/src/androidTest/assets/models/` contains a tiny (~100 KB) TFLite model
+that implements the exact production model contract but was trained on
+procedurally generated textures (`training/export_test_model.py`). It gives
+the E2E tests deterministic predictions without shipping any model in the
+app itself. It recognises textures, not animals — never move it into
+`app/src/main/assets/`.
 
 ## Manual QA checklist (device)
 

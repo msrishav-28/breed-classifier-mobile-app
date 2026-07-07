@@ -56,3 +56,19 @@ cp build/labels.txt              ../app/src/main/assets/models/
 
 Model binaries are intentionally gitignored; distribute them through releases
 or CI artifacts, not the repository.
+
+## Test fixture tooling
+
+Two auxiliary scripts support the app's instrumented end-to-end tests:
+
+- `make_fixture_dataset.py --output-dir <dir>` — generates a procedural
+  texture dataset (8 classes named after real breeds so catalog integration
+  can be tested).
+- `export_test_model.py --data-dir <dir> --output-dir <dir>` — trains a tiny
+  (~135 KB) CNN on it and exports a model implementing the exact production
+  contract; the result is committed under `app/src/androidTest/assets/`.
+
+The whole production pipeline (`train.py`) has been executed end to end
+against the fixture dataset (100% validation accuracy, contract-verified
+float16 export) — so the only missing ingredient for a production model is
+the real photo dataset and a GPU; no code changes are required.
