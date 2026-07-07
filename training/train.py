@@ -73,13 +73,9 @@ def load_datasets(data_dir: Path, batch_size: int):
         data_dir, subset="validation", **common)
 
     class_names = list(train_ds.class_names)
-    autotune = tf.data.AUTOTUNE
-    train_ds = train_ds.cache().shuffle(1000).prefetch(autotune)
-    val_ds = val_ds.cache().prefetch(autotune)
-    return train_ds, val_ds, class_names
 
-
-def build_model(num_classes: int) -> keras.Model:
+    # Augmentation lives in the data pipeline, NOT in the model: the exported
+    # TFLite graph must contain only inference ops (see docs/MODEL.md).
     augmentation = keras.Sequential(
         [
             keras.layers.RandomFlip("horizontal"),
@@ -91,6 +87,19 @@ def build_model(num_classes: int) -> keras.Model:
         name="augmentation",
     )
 
+    autotune = tf.data.AUTOTUNE
+    train_ds = (
+        train_ds.cache()
+        .shuffle(1000)
+        .map(lambda x, y: (augmentation(x, training=True), y),
+             num_parallel_calls=autotune)
+        .prefetch(autotune)
+    )
+    val_ds = val_ds.cache().prefetch(autotune)
+    return train_ds, val_ds, class_names
+
+
+def build_model(num_classes: int) -> keras.Model:
     # include_preprocessing=True bakes 0..255 rescaling into the graph, which
     # is what lets the app feed raw pixel values.
     backbone = keras.applications.EfficientNetV2B0(
@@ -103,8 +112,7 @@ def build_model(num_classes: int) -> keras.Model:
     backbone.trainable = False
 
     inputs = keras.Input(shape=(IMAGE_SIZE, IMAGE_SIZE, 3))
-    x = augmentation(inputs)
-    x = backbone(x, training=False)
+    x = backbone(inputs, training=False)
     x = keras.layers.Dropout(0.25)(x)
     outputs = keras.layers.Dense(num_classes, activation="softmax")(x)
     return keras.Model(inputs, outputs, name="breed_classifier")

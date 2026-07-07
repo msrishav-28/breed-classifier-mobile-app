@@ -22,11 +22,12 @@ Release-specific steps:
       (2–3 GB RAM) and one recent device
 - [ ] Measure cold start and inference latency on the low-end device;
       inference must stay under 3 s
-- [ ] Bump `versionCode` / `versionName`; tag the commit
-- [ ] Build a **signed** release: create a keystore (never commit it), add a
-      `signingConfig` pointing at it via environment variables or a local
-      `keystore.properties`, then `./gradlew :app:bundleRelease` for the
-      Play-Store `.aab`
+- [ ] Bump `versionCode` / `versionName`; tag the commit `vX.Y.Z` — the
+      Release workflow builds the APK + AAB and attaches them to a GitHub
+      release automatically
+- [ ] Build a **signed** release: create a keystore (never commit it) and
+      provide it via `keystore.properties` locally or the CI secrets below;
+      the Gradle signing config activates automatically when present
 - [ ] Store listing: screenshots (light + dark), feature graphic, 
       description; declare the camera permission usage
 - [ ] Host a privacy policy (docs/PRIVACY.md has the facts; the app collects
@@ -35,27 +36,32 @@ Release-specific steps:
       shared, all processing on device
 - [ ] Decide and add a repository LICENSE before publishing source
 
-## Signing configuration sketch
+## Signing configuration
 
-`app/build.gradle.kts` deliberately ships without a signing config. Add:
+Signing is already wired in `app/build.gradle.kts` and activates only when a
+`keystore.properties` file exists at the repository root:
 
-```kotlin
-signingConfigs {
-    create("release") {
-        val props = java.util.Properties().apply {
-            val f = rootProject.file("keystore.properties")
-            if (f.exists()) f.inputStream().use { load(it) }
-        }
-        storeFile = props.getProperty("storeFile")?.let { file(it) }
-        storePassword = props.getProperty("storePassword")
-        keyAlias = props.getProperty("keyAlias")
-        keyPassword = props.getProperty("keyPassword")
-    }
-}
+```properties
+storeFile=release.keystore
+storePassword=...
+keyAlias=...
+keyPassword=...
 ```
 
-and set `signingConfig = signingConfigs.getByName("release")` in the release
-build type. `keystore.properties` and `*.jks` are gitignored.
+`keystore.properties` and keystore files are gitignored. Without the file,
+release builds succeed unsigned (CI relies on this).
+
+The tag-triggered Release workflow (`.github/workflows/release.yml`) signs
+automatically when these repository secrets are configured:
+
+| Secret | Contents |
+|--------|----------|
+| `RELEASE_KEYSTORE_BASE64` | `base64 -w0 release.keystore` |
+| `RELEASE_KEYSTORE_PASSWORD` | store and key password |
+| `RELEASE_KEY_ALIAS` | key alias |
+
+Push a `vX.Y.Z` tag and the workflow runs checks, builds APK + AAB, and
+attaches them to a GitHub release (unsigned when no secrets are set).
 
 ## Distribution of the model
 
