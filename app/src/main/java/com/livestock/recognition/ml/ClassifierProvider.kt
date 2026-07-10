@@ -10,8 +10,7 @@ import kotlinx.coroutines.withContext
 /**
  * Lazily initialises the classifier exactly once and exposes whether a model
  * is bundled at all, so the UI can degrade gracefully in builds that ship
- * without a trained model (model files are intentionally not committed to
- * the repository; see docs/MODEL.md).
+ * without a trained model, such as local or test variants.
  */
 class ClassifierProvider(context: Context) {
 

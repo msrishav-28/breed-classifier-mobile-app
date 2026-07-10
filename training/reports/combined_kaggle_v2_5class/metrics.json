@@ -1,0 +1,138 @@
+{
+  "model": "build\\model_5class\\breed_classifier.tflite",
+  "labels": [
+    "Gir",
+    "Hallikar",
+    "Murrah",
+    "Sahiwal",
+    "Tharparkar"
+  ],
+  "test_dir": "datasets\\processed\\combined_kaggle_v2_5class\\test",
+  "sample_count": 150,
+  "top1_accuracy": 0.88,
+  "top3_accuracy": 1.0,
+  "mean_latency_ms_python_tflite": 65.03244466497563,
+  "min_recall": 0.6333333333333333,
+  "per_class": [
+    {
+      "label": "Gir",
+      "support": 30,
+      "precision": 0.8636363636363636,
+      "recall": 0.6333333333333333,
+      "f1": 0.7307692307692307
+    },
+    {
+      "label": "Hallikar",
+      "support": 30,
+      "precision": 0.90625,
+      "recall": 0.9666666666666667,
+      "f1": 0.9354838709677419
+    },
+    {
+      "label": "Murrah",
+      "support": 30,
+      "precision": 0.967741935483871,
+      "recall": 1.0,
+      "f1": 0.9836065573770492
+    },
+    {
+      "label": "Sahiwal",
+      "support": 30,
+      "precision": 0.7297297297297297,
+      "recall": 0.9,
+      "f1": 0.8059701492537312
+    },
+    {
+      "label": "Tharparkar",
+      "support": 30,
+      "precision": 0.9642857142857143,
+      "recall": 0.9,
+      "f1": 0.9310344827586207
+    }
+  ],
+  "calibration": {
+    "expected_calibration_error": 0.09827131032943721,
+    "bins": [
+      {
+        "lower": 0.0,
+        "upper": 0.1,
+        "count": 0,
+        "accuracy": 0.0,
+        "mean_confidence": 0.0,
+        "ece_component": 0.0
+      },
+      {
+        "lower": 0.1,
+        "upper": 0.2,
+        "count": 0,
+        "accuracy": 0.0,
+        "mean_confidence": 0.0,
+        "ece_component": 0.0
+      },
+      {
+        "lower": 0.2,
+        "upper": 0.3,
+        "count": 0,
+        "accuracy": 0.0,
+        "mean_confidence": 0.0,
+        "ece_component": 0.0
+      },
+      {
+        "lower": 0.3,
+        "upper": 0.4,
+        "count": 1,
+        "accuracy": 0.0,
+        "mean_confidence": 0.33287617564201355,
+        "ece_component": 0.0022191745042800903
+      },
+      {
+        "lower": 0.4,
+        "upper": 0.5,
+        "count": 10,
+        "accuracy": 0.7,
+        "mean_confidence": 0.47045049965381625,
+        "ece_component": 0.015303300023078913
+      },
+      {
+        "lower": 0.5,
+        "upper": 0.6,
+        "count": 10,
+        "accuracy": 0.8,
+        "mean_confidence": 0.5576327025890351,
+        "ece_component": 0.016157819827397665
+      },
+      {
+        "lower": 0.6,
+        "upper": 0.7,
+        "count": 20,
+        "accuracy": 0.65,
+        "mean_confidence": 0.6547903090715408,
+        "ece_component": 0.0006387078762054354
+      },
+      {
+        "lower": 0.7,
+        "upper": 0.8,
+        "count": 34,
+        "accuracy": 0.8823529411764706,
+        "mean_confidence": 0.7543378998251522,
+        "ece_component": 0.029016742706298827
+      },
+      {
+        "lower": 0.8,
+        "upper": 0.9,
+        "count": 27,
+        "accuracy": 0.9629629629629629,
+        "mean_confidence": 0.8566703266567655,
+        "ece_component": 0.01913267453511554
+      },
+      {
+        "lower": 0.9,
+        "upper": 1.0,
+        "count": 48,
+        "accuracy": 1.0,
+        "mean_confidence": 0.9506159660716852,
+        "ece_component": 0.01580289085706074
+      }
+    ]
+  }
+}

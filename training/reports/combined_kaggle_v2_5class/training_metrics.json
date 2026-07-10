@@ -1,0 +1,20 @@
+{
+  "val_accuracy": 0.8912,
+  "val_top3_accuracy": 0.9958,
+  "val_loss": 0.6483,
+  "classes": [
+    "Gir",
+    "Hallikar",
+    "Murrah",
+    "Sahiwal",
+    "Tharparkar"
+  ],
+  "label_smoothing": 0.1,
+  "class_weights": {
+    "0": 0.6551912568306011,
+    "1": 1.4894409937888198,
+    "2": 1.347191011235955,
+    "3": 0.6970930232558139,
+    "4": 1.5986666666666667
+  }
+}

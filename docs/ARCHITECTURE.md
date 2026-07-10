@@ -63,9 +63,10 @@ memory and latency budgets, and had no measurable accuracy story. An ensemble
 can return later behind the same `BreedClassifier` interface if a trained one
 proves its worth.
 
-**Model absence is a first-class state.** Model binaries are gitignored, so
-`ClassifierProvider` exposes `Ready`/`Unavailable`, the home screen shows a
-warning, and the results screen explains rather than crashes.
+**Model absence is a first-class state.** Production builds now bundle a real
+model, but `ClassifierProvider` still exposes `Ready`/`Unavailable` so local
+or test variants without a model show a clear degraded state rather than
+crashing.
 
 **Manual DI.** One `AppContainer` on the `Application` class. At this app's
 size a DI framework (Hilt) buys annotation processing time and indirection

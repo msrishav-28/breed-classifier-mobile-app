@@ -245,7 +245,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
                         android:textAppearance="?attr/textAppearanceBodyMedium"
-                        tools:text="Typical milk yield: 8–14 litres/day" />
+                        tools:text="Typical milk yield: 8-14 litres/day" />
 
                     <TextView
                         android:id="@+id/characteristicsText"
@@ -253,7 +253,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
                         android:textAppearance="?attr/textAppearanceBodyMedium"
-                        tools:text="• Heat tolerant\n• Hardy" />
+                        tools:text="- Heat tolerant\n- Hardy" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -265,7 +265,7 @@
                 android:gravity="center"
                 android:textAppearance="?attr/textAppearanceBodySmall"
                 android:textColor="?attr/colorOnSurfaceVariant"
-                tools:text="Captured 3 Jul 2026 · processed in 420 ms on device" />
+                tools:text="Captured 3 Jul 2026 - processed in 420 ms on device" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 

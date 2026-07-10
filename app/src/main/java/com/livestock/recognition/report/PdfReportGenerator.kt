@@ -16,7 +16,7 @@ import java.util.Locale
 
 /**
  * Renders a [ReportContent] to a single- or multi-page A4 PDF using the
- * platform [PdfDocument] API — no third-party PDF dependency.
+ * platform [PdfDocument] API with no third-party PDF dependency.
  */
 class PdfReportGenerator(private val context: Context) {
 

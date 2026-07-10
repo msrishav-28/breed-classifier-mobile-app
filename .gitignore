@@ -1,5 +1,6 @@
 # Gradle
 .gradle/
+.kotlin/
 build/
 local.properties
 
@@ -14,9 +15,7 @@ local.properties
 *.hprof
 captures/
 
-# ML model binaries are distributed via releases, not the repository
-app/src/main/assets/models/*.tflite
-app/src/main/assets/models/labels.txt
+# Production TFLite model is committed when it stays under the documented ~15 MB cap.
 
 # Training artifacts
 training/build/

@@ -18,8 +18,8 @@ import java.io.File
 
 /**
  * UI-level proof of the degraded path: builds that ship without a model
- * (the default — model binaries are not committed) must explain the
- * situation on the results screen instead of crashing or spinning.
+ * must explain the situation on the results screen instead of crashing or
+ * spinning. Production builds bundle a model, so this test skips there.
  */
 @RunWith(AndroidJUnit4::class)
 class ModelUnavailableFlowTest {

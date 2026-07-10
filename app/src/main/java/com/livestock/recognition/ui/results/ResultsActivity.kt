@@ -169,7 +169,7 @@ class ResultsActivity : AppCompatActivity() {
         binding.characteristicsText.visibility =
             if (info.characteristics.isEmpty()) View.GONE else View.VISIBLE
         binding.characteristicsText.text =
-            info.characteristics.joinToString(separator = "\n") { "• $it" }
+            info.characteristics.joinToString(separator = "\n") { "- $it" }
     }
 
     private fun loadPhoto(imagePath: String) {

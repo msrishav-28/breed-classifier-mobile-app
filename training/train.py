@@ -56,6 +56,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--fine-tune-learning-rate", type=float, default=1e-5)
     parser.add_argument("--fine-tune-layers", type=int, default=60,
                         help="How many trailing backbone layers to unfreeze")
+    parser.add_argument("--label-smoothing", type=float, default=0.1)
+    parser.add_argument("--no-class-weights", action="store_true",
+                        help="Disable inverse-frequency class weighting")
     return parser.parse_args()
 
 
@@ -118,12 +121,32 @@ def build_model(num_classes: int) -> keras.Model:
     return keras.Model(inputs, outputs, name="breed_classifier")
 
 
-def compile_model(model: keras.Model, learning_rate: float) -> None:
+def compile_model(model: keras.Model, learning_rate: float, label_smoothing: float) -> None:
     model.compile(
         optimizer=keras.optimizers.Adam(learning_rate),
-        loss="categorical_crossentropy",
+        loss=keras.losses.CategoricalCrossentropy(label_smoothing=label_smoothing),
         metrics=["accuracy", keras.metrics.TopKCategoricalAccuracy(3, name="top3")],
     )
+
+
+def compute_class_weights(data_dir: Path, class_names: list[str]) -> dict[int, float]:
+    image_extensions = {".jpg", ".jpeg", ".jpe", ".png", ".webp", ".gif", ".bmp"}
+    counts = []
+    for class_name in class_names:
+        class_dir = data_dir / class_name
+        count = sum(
+            1
+            for path in class_dir.rglob("*")
+            if path.is_file() and path.suffix.lower() in image_extensions
+        )
+        counts.append(count)
+    total = sum(counts)
+    if total == 0 or any(count == 0 for count in counts):
+        return {}
+    return {
+        index: total / (len(class_names) * count)
+        for index, count in enumerate(counts)
+    }
 
 
 def unfreeze_top_layers(model: keras.Model, layer_count: int) -> None:
@@ -174,25 +197,42 @@ def main() -> None:
 
     train_ds, val_ds, class_names = load_datasets(args.data_dir, args.batch_size)
     print(f"Classes ({len(class_names)}): {', '.join(class_names)}")
+    class_weights = None if args.no_class_weights else compute_class_weights(args.data_dir, class_names)
+    if class_weights:
+        print("Class weights:", json.dumps(class_weights, indent=2))
 
     model = build_model(len(class_names))
-    compile_model(model, args.learning_rate)
+    compile_model(model, args.learning_rate, args.label_smoothing)
 
     callbacks = [
         keras.callbacks.EarlyStopping(
             monitor="val_accuracy", patience=4, restore_best_weights=True),
         keras.callbacks.ReduceLROnPlateau(monitor="val_loss", patience=2, factor=0.5),
     ]
+    histories = []
 
     print("\n=== Phase 1: training classifier head ===")
-    model.fit(train_ds, validation_data=val_ds, epochs=args.epochs, callbacks=callbacks)
+    history = model.fit(
+        train_ds,
+        validation_data=val_ds,
+        epochs=args.epochs,
+        callbacks=callbacks,
+        class_weight=class_weights,
+    )
+    histories.append({"phase": "frozen_head", "history": history.history})
 
     if args.fine_tune_epochs > 0:
         print("\n=== Phase 2: fine-tuning backbone ===")
         unfreeze_top_layers(model, args.fine_tune_layers)
-        compile_model(model, args.fine_tune_learning_rate)
-        model.fit(train_ds, validation_data=val_ds,
-                  epochs=args.fine_tune_epochs, callbacks=callbacks)
+        compile_model(model, args.fine_tune_learning_rate, args.label_smoothing)
+        history = model.fit(
+            train_ds,
+            validation_data=val_ds,
+            epochs=args.fine_tune_epochs,
+            callbacks=callbacks,
+            class_weight=class_weights,
+        )
+        histories.append({"phase": "fine_tune", "history": history.history})
 
     loss, accuracy, top3 = model.evaluate(val_ds, verbose=0)
     print(f"\nValidation accuracy: {accuracy:.3f} (top-3: {top3:.3f})")
@@ -205,9 +245,12 @@ def main() -> None:
         {"val_accuracy": round(float(accuracy), 4),
          "val_top3_accuracy": round(float(top3), 4),
          "val_loss": round(float(loss), 4),
-         "classes": class_names},
+         "classes": class_names,
+         "label_smoothing": args.label_smoothing,
+         "class_weights": class_weights or {}},
         indent=2,
     ))
+    (args.output_dir / "history.json").write_text(json.dumps(histories, indent=2))
 
     size_mb = model_path.stat().st_size / (1024 * 1024)
     print(f"\nExported {model_path} ({size_mb:.1f} MB)")
