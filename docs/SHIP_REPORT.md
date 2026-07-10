@@ -6,7 +6,7 @@ Date: 2026-07-10
 
 Engineering, ML, and local QA are release-candidate ready for a 5-breed offline Android app. The app bundles a real TensorFlow Lite model, runs without network/storage permissions, classifies on device, stores history locally, and generates PDF reports.
 
-The single release-blocking operator step is signing and Play ownership: create the release keystore, set the CI signing secrets, choose a license, provide a hosted privacy-policy URL/contact, and run one physical-device camera check before tagging `v1.0.0`.
+The code/model release-candidate commit is on `main` and GitHub Actions is green. The single release-blocking operator step is signing and Play ownership: create the release keystore, set the CI signing secrets, choose a license, provide a hosted privacy-policy URL/contact, and run one physical-device camera check before tagging `v1.0.0`.
 
 Unsigned local artifacts built successfully:
 
@@ -92,7 +92,13 @@ Worst observed emulator latency was 1,583 ms, under the 3,000 ms product budget.
 
 ## 4. Verification Evidence
 
-Baseline CI on `main` before model integration was green for both build and e2e:
+Final CI on `main` for the code/model release-candidate commit `3cfd7b960a19b44f2f9943aa24107032d0394d5c` is green:
+
+- GitHub Actions run: https://github.com/msrishav-28/breed-classifier-mobile-app/actions/runs/29111578929
+- Build job: `86424910176`
+- E2E job: `86424910245`
+
+Baseline CI on `main` before model integration was also green for both build and e2e:
 
 - GitHub Actions run: https://github.com/msrishav-28/breed-classifier-mobile-app/actions/runs/28833844616
 - Build job: `85513369784`
@@ -174,7 +180,7 @@ Remaining release-owner actions:
 - Run one physical-device QA pass for camera capture.
 - Host `store/privacy_policy.md` and insert the final URL/contact/effective date.
 - Choose a repository license. MIT is shorter and permissive; Apache-2.0 is also permissive and adds explicit patent language. Do not add the file until the owner chooses.
-- Push the final commit, confirm GitHub Actions build and e2e are green, then tag `v1.0.0` to publish the release workflow.
+- After signing secrets, privacy-policy hosting, license choice, and physical camera QA are complete, tag `v1.0.0` to publish the release workflow.
 
 ## 7. Risks And Next Iterations
 
